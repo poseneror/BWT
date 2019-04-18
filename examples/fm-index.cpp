@@ -29,34 +29,41 @@ typename t_csa::size_type count1(
         return 0;
 
     // error is in first half:
-    typename t_csa::size_type l = 0;
-    typename t_csa::size_type r = csa.size() - 1;
+    typename t_csa::size_type l_res = 0;
+    typename t_csa::size_type r_res = 0;
     string::iterator middle = begin;
     advance(middle, ceil((end - begin) / 2));
+    cout << "middle is " << *middle << endl;
+
     //cout << "middle " << *begin << "begin " << begin << endl;
-    typename t_csa::size_type result = backward_search(csa, 0, csa.size() - 1, begin, end, l, r);
-    cout<<result<<endl;
-    typename t_csa::size_type total=0; 
+    typename t_csa::size_type result = backward_search(csa, 0, csa.size() - 1, middle, end, l_res, r_res);
+
+    cout << "right side matches " << result << endl;
+    typename t_csa::size_type total = 0;
     if (!result) return 0;
 
-    for (string::iterator i = middle; i >= begin; i--)
+    for (string::iterator i = middle -1; i >= begin; --i)
     {
-        result = backward_search(csa, l, r, i + 1, middle, l, r);
-        cout << result << endl;
+        typename t_csa::size_type l_res2 = l_res;
+        typename t_csa::size_type r_res2 = r_res;
+        result = backward_search(csa, l_res, r_res, i + 1, middle, l_res2, r_res2);
+        cout << "next untill " << *(i + 1) << " results " << result << endl;
 
-        if (!result)
-            return 0;
-            string sigma= "abcdefghijklmnopqrstuvwxyz";
+        if (!result) continue;
+        
+        string sigma= "abcdefghijklmnopqrstuvwxyz";
         
         for (int ci = 0; ci < sigma.length(); ci++)
         {
+            typename t_csa::size_type l_res3 = l_res2;
+            typename t_csa::size_type r_res3 = r_res2;
             char c = sigma.at(ci);
             if (c==*i) continue;
-            result = backward_search(csa, l, r, c, l, r);
-            cout << result << endl;
-
-            if (!result) return 0;
-            result = backward_search(csa, l, r, begin, i, l, r);
+            result = backward_search(csa, l_res2, r_res2, c, l_res3, r_res3);
+            cout << "replace " <<  *i << " with " << c << " matches " << result << endl;
+            if (!result) continue;
+            result = backward_search(csa, l_res3, l_res3, begin, i, l_res3, r_res3);
+            cout << "replace with " << c << " completes" << result << endl;
             cout << result << endl;
 
             total+=result;
