@@ -14,22 +14,29 @@ int main(int argc, char** argv)
         cout << "    This program constructs a very compact FM-index" << endl;
         cout << "    which supports count, locate, and extract queries." << endl;
         cout << "    text_file      Original text file." << endl;
+        cout << "    error_count    Exact number of errors in text." <<endl;
         cout << "    max_locations  Maximal number of location to report." <<endl;
         cout << "    post_context   Maximal length of the reported post-context." << endl;
         cout << "    pre_context    Maximal length of the pre-context." << endl;
         return 1;
     }
+
+    size_t error_count = 2;
     size_t max_locations = 5;
     size_t post_context = 10;
     size_t pre_context = 10;
+
     if (argc >= 3) {
-        max_locations = atoi(argv[2]);
+        error_count = atoi(argv[2]);
     }
     if (argc >= 4) {
-        post_context = atoi(argv[3]);
+        max_locations = atoi(argv[3]);
     }
     if (argc >= 5) {
-        pre_context = atoi(argv[4]);
+        post_context = atoi(argv[4]);
+    }
+    if (argc >= 6) {
+        pre_context = atoi(argv[5]);
     }
     string index_suffix = ".fm9";
     string index_file   = string(argv[1])+index_suffix;
@@ -52,10 +59,12 @@ int main(int argc, char** argv)
     string query;
     while (getline(cin, query)) {
         size_t m  = query.size();
+        // todo: here we count the occurrences
         size_t occs = sdsl::count(fm_index, query.begin(), query.end());
         cout << "# of occurrences: " << occs << endl;
         if (occs > 0) {
             cout << "Location and context of first occurrences: " << endl;
+            // todo: here we locate
             auto locations = locate(fm_index, query.begin(), query.begin()+m);
             sort(locations.begin(), locations.end());
             for (size_t i = 0, pre_extract = pre_context, post_extract = post_context; i < min(occs, max_locations); ++i) {
