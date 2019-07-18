@@ -52,19 +52,16 @@ typename t_csa::size_type count1(
             typename t_csa::size_type l_res2 = 0;
             typename t_csa::size_type r_res2 = 0;
             int index = (i - begin);
-            cout << " char "<< *i << " index = " <<  index << ", middle - 1 = " << (middle - begin - 1) << endl;
             if (i != middle - 1)
             {
-                result = backward_search(csa, l_res, r_res, i + 1, middle - 1, l_res2, r_res2);
-                cout << "next untill " << *(i + 1) << " results " << result << endl;
-
+                result = backward_search(csa, l_res, r_res, i + 1, middle, l_res2, r_res2);
                 if (!result)
                     continue;
             }
+
             // assume that we replace the character at "i"
             for (int ci = 0; ci < sigma.length(); ci++)
             {
-                cout << ci << " out of " << sigma.length() << endl;
                 // replace with each possibble letter in "sigma"
                 typename t_csa::size_type l_res3 = 0;
                 typename t_csa::size_type r_res3 = 0;
@@ -76,58 +73,43 @@ typename t_csa::size_type count1(
                     continue;
                 if (i != begin)
                 {                                                                                // only continue if found
-                    result = backward_search(csa, l_res3, l_res3, begin, i - 1, l_res3, r_res3); // look for an exact match to the replaced character
+                    result = backward_search(csa, l_res3, l_res3, begin, i, l_res3, r_res3); // look for an exact match to the replaced character
                 }
-                cout << "replace with " << c << " completes " << result << endl;
                 total += result;
             }
         }
     }
 
-    // missmatch occours in the right half:
-
-    l_res = 0;
-    r_res = 0;
-
-    result = forward_search(csa, 0, csa.size() - 1, begin, middle - 1, l_res, r_res);
-    result = 0;
-    cout << "left side matches " << result << endl;
-
-    if (result)
+    for (string::iterator i = end -1; i >= middle; i--)
     {
-        for (string::iterator i = middle; i <= end; i++)
+        // the missmatch is at "i"
+        typename t_csa::size_type l_res2 = 0;
+        typename t_csa::size_type r_res2 = 0;
+        if (i < end - 1)
         {
-            // the missmatch is at "i"
-            typename t_csa::size_type l_res2 = l_res;
-            typename t_csa::size_type r_res2 = r_res;
-            if (i != middle)
-            {
-                result = forward_search(csa, l_res, r_res, middle, i - 1, l_res2, r_res2);
-                cout << "next untill " << *(i - 1) << " results " << result << endl;
+            result = backward_search(csa, 0, csa.size() - 1, i + 1, end, l_res2, r_res2);
 
-                if (!result)
-                    continue;
-            }
+            if (!result)
+                continue;
+        }
 
-            // assume that we replace the character at "i"
-            for (int ci = 0; ci < sigma.length(); ci++)
-            {
-                // replace with each possibble letter in "sigma"
-                typename t_csa::size_type l_res3 = l_res2;
-                typename t_csa::size_type r_res3 = r_res2;
-                char c = sigma.at(ci);
-                if (c == *i)
-                    continue;                                                    // we do not need to check with the letter in use
-                result = forward_search(csa, l_res2, r_res2, c, l_res3, r_res3); // get the range for matches with "c"
-                if (!result)
-                    continue;
-                if (i != begin)
-                {                                                                             // only continue if found
-                    result = forward_search(csa, l_res3, l_res3, i + 1, end, l_res3, r_res3); // look for an exact match from the replaced character
-                }
-                cout << "replace with " << c << " completes " << result << endl;
-                total += result;
+        // assume that we replace the character at "i"
+        for (int ci = 0; ci < sigma.length(); ci++)
+        {
+            // replace with each possibble letter in "sigma"
+            typename t_csa::size_type l_res3 = 0;
+            typename t_csa::size_type r_res3 = 0;
+            char c = sigma.at(ci);
+            if (c == *i)
+                continue;                                                    // we do not need to check with the letter in use
+            result = backward_search(csa, l_res2, r_res2, c, l_res3, r_res3); // get the range for matches with "c"
+            if (!result)
+                continue;
+            if (i != end)
+            {                                                                             // only continue if found
+                result = backward_search(csa, l_res3, l_res3, begin, i, l_res3, r_res3); // look for an exact match from the replaced character
             }
+            total += result;
         }
     }
 
