@@ -28,46 +28,106 @@ typename t_csa::size_type count1(
     if (end - begin > (typename std::iterator_traits<t_pat_iter>::difference_type)csa.size())
         return 0;
 
+    string sigma = "abcdefghijklmnopqrstuvwxyz";
+
+    string::iterator middle = begin;
+    int mod = (end - begin) % 2;
+    advance(middle, ((end - begin) / 2) + mod - 1);
+    cout << "middle is " << *middle << endl;
+
     // error is in first half:
     typename t_csa::size_type l_res = 0;
     typename t_csa::size_type r_res = 0;
-    string::iterator middle = begin;
-    advance(middle, ceil((end - begin) / 2));
-    cout << "middle is " << *middle << endl;
 
-    //cout << "middle " << *begin << "begin " << begin << endl;
-    typename t_csa::size_type result = backward_search(csa, 0, csa.size() - 1, middle, end, l_res, r_res);
-
-    cout << "right side matches " << result << endl;
     typename t_csa::size_type total = 0;
-    if (!result) return 0;
 
-    for (string::iterator i = middle -1; i >= begin; --i)
+    typename t_csa::size_type result = backward_search(csa, 0, csa.size() - 1, middle, end, l_res, r_res);
+    cout << "right side matches " << result << endl;
+
+    if (result)
     {
-        typename t_csa::size_type l_res2 = l_res;
-        typename t_csa::size_type r_res2 = r_res;
-        result = backward_search(csa, l_res, r_res, i + 1, middle, l_res2, r_res2);
-        cout << "next untill " << *(i + 1) << " results " << result << endl;
-
-        if (!result) continue;
-        
-        string sigma= "abcdefghijklmnopqrstuvwxyz";
-        
-        for (int ci = 0; ci < sigma.length(); ci++)
+        for (string::iterator i = middle - 1; i >= begin; i--)
         {
-            typename t_csa::size_type l_res3 = l_res2;
-            typename t_csa::size_type r_res3 = r_res2;
-            char c = sigma.at(ci);
-            if (c==*i) continue;
-            result = backward_search(csa, l_res2, r_res2, c, l_res3, r_res3);
-            cout << "replace " <<  *i << " with " << c << " matches " << result << endl;
-            if (!result) continue;
-            result = backward_search(csa, l_res3, l_res3, begin, i, l_res3, r_res3);
-            cout << "replace with " << c << " completes" << result << endl;
-            cout << result << endl;
+            // the missmatch is at "i"
+            typename t_csa::size_type l_res2 = 0;
+            typename t_csa::size_type r_res2 = 0;
+            int index = (i - begin);
+            cout << " char "<< *i << " index = " <<  index << ", middle - 1 = " << (middle - begin - 1) << endl;
+            if (i != middle - 1)
+            {
+                result = backward_search(csa, l_res, r_res, i + 1, middle - 1, l_res2, r_res2);
+                cout << "next untill " << *(i + 1) << " results " << result << endl;
 
-            total+=result;
-        
+                if (!result)
+                    continue;
+            }
+            // assume that we replace the character at "i"
+            for (int ci = 0; ci < sigma.length(); ci++)
+            {
+                cout << ci << " out of " << sigma.length() << endl;
+                // replace with each possibble letter in "sigma"
+                typename t_csa::size_type l_res3 = 0;
+                typename t_csa::size_type r_res3 = 0;
+                char c = sigma.at(ci);
+                if (c == *i)
+                    continue;                                                     // we do not need to check with the letter in use
+                result = backward_search(csa, l_res2, r_res2, c, l_res3, r_res3); // get the range for matches with "c"
+                if (!result)
+                    continue;
+                if (i != begin)
+                {                                                                                // only continue if found
+                    result = backward_search(csa, l_res3, l_res3, begin, i - 1, l_res3, r_res3); // look for an exact match to the replaced character
+                }
+                cout << "replace with " << c << " completes " << result << endl;
+                total += result;
+            }
+        }
+    }
+
+    // missmatch occours in the right half:
+
+    l_res = 0;
+    r_res = 0;
+
+    result = forward_search(csa, 0, csa.size() - 1, begin, middle - 1, l_res, r_res);
+    result = 0;
+    cout << "left side matches " << result << endl;
+
+    if (result)
+    {
+        for (string::iterator i = middle; i <= end; i++)
+        {
+            // the missmatch is at "i"
+            typename t_csa::size_type l_res2 = l_res;
+            typename t_csa::size_type r_res2 = r_res;
+            if (i != middle)
+            {
+                result = forward_search(csa, l_res, r_res, middle, i - 1, l_res2, r_res2);
+                cout << "next untill " << *(i - 1) << " results " << result << endl;
+
+                if (!result)
+                    continue;
+            }
+
+            // assume that we replace the character at "i"
+            for (int ci = 0; ci < sigma.length(); ci++)
+            {
+                // replace with each possibble letter in "sigma"
+                typename t_csa::size_type l_res3 = l_res2;
+                typename t_csa::size_type r_res3 = r_res2;
+                char c = sigma.at(ci);
+                if (c == *i)
+                    continue;                                                    // we do not need to check with the letter in use
+                result = forward_search(csa, l_res2, r_res2, c, l_res3, r_res3); // get the range for matches with "c"
+                if (!result)
+                    continue;
+                if (i != begin)
+                {                                                                             // only continue if found
+                    result = forward_search(csa, l_res3, l_res3, i + 1, end, l_res3, r_res3); // look for an exact match from the replaced character
+                }
+                cout << "replace with " << c << " completes " << result << endl;
+                total += result;
+            }
         }
     }
 
@@ -88,7 +148,7 @@ int main(int argc, char **argv)
 {
     if (argc < 2)
     {
-        cout << "Usage " << argv[0] << " text_file [max_locations] [post_context] [pre_context]" << endl;
+        cout << "Usage " << argv[0] << " text_file [error_count (0 - 2)] [max_locations] [post_context] [pre_context]" << endl;
         cout << "    This program constructs a very compact FM-index" << endl;
         cout << "    which supports count, locate, and extract queries." << endl;
         cout << "    text_file      Original text file." << endl;

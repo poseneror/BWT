@@ -2,6 +2,7 @@
     "files.associations": {
         "istream": "cpp",
         "type_traits": "cpp",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "ostream": "cpp"
     }
 }
