@@ -81,7 +81,6 @@ typename t_csa::size_type count1(
                     result = backward_search(csa, l_res3, r_res3, begin, i, l_res4, r_res4); // look for an exact match to the replaced character
                 }
                 total += result;
-                cout << "second half match " << result << endl;
             }
         }
     }
@@ -96,7 +95,6 @@ typename t_csa::size_type count1(
     // All matches until middle
     result = bidirectional_search_forward(csa, r_csa, l_res_f, r_res_f, l_res_b, r_res_b, begin, middle, l_res_f, r_res_f, l_res_b, r_res_b);
 
-    cout << "first half (" << 0 << " - " << middle-1 - begin << ") matches " << result << endl;
     if (result)
     {
         for (string::iterator i = middle; i < end; i++)
@@ -113,7 +111,6 @@ typename t_csa::size_type count1(
                 if (!result)
                     continue;
 
-                cout << "until " << i - begin << " got " << result << endl;
             }
 
             // assume that we replace the character at "i"
@@ -131,7 +128,6 @@ typename t_csa::size_type count1(
                     continue; // we do not need to check with the letter in use
                 // get the range for matches with "c"
                 result = bidirectional_search(r_csa, l_res_b2, r_res_b2, l_res_f2, r_res_f2, c, l_res_b3, r_res_b3, l_res_f3, r_res_f3);
-                cout << "replace " << i - begin << " got " << result << endl;
 
                 if (!result)
                     continue;
@@ -139,11 +135,7 @@ typename t_csa::size_type count1(
                 if (i != end - 1)
                 { // only continue if found
                     result = bidirectional_search_forward(csa, r_csa, l_res_f3, r_res_f3, l_res_b3, r_res_b3, i + 1, end, l_res_f3, r_res_f3, l_res_b3, r_res_b3);
-                    
                 }
-
-                cout << i + 1 - begin << "to the end (" << end - begin << ")got " << result << endl;
-
                 total += result;
             }
         }
@@ -322,17 +314,18 @@ typename t_csa::size_type count2(
     typename t_csa::size_type result = 1;
 
     string sigma = "0123";
-
+    if(end-begin < 2) return 0;
     size_t s1 = (end - begin) / 3;
 
     size_t s2 = (end - begin) - s1;
 
-    string::iterator t2 = begin;
     string::iterator t1 = begin;
-    if (s2 > 0)
-        advance(t2, s2 - 1);
+    string::iterator t2 = begin;
+
     if (s1 > 0)
         advance(t1, s1 - 1);
+    if (s2 > 0)
+        advance(t2, s2 - 1);
 
     // Case A: mismatches in the first two parts
 
@@ -341,7 +334,7 @@ typename t_csa::size_type count2(
     typename t_csa::size_type l_res_b = 0;
     typename t_csa::size_type r_res_b = r_csa.size() - 1;
 
-    if (t2 != end)
+    if (t2 < end - 1)
     {
         result = bidirectional_search_backward(csa, r_csa, l_res_f, r_res_f, l_res_b, r_res_b, t2 + 1, end, l_res_f, r_res_f, l_res_b, r_res_b);
     }
@@ -378,9 +371,48 @@ typename t_csa::size_type count2(
 
                 if (!result)
                     continue;
-                cout << "doing it for " << (i) - begin << " with " << result << " results" << endl;
-                
-                total += result;
+                // result = count1(csa, r_csa, begin, i, l_res3_f, r_res3_f, l_res3_b, r_res3_b, tag);
+                for (string::iterator j = i-1 ; j >= begin; j--)
+                {
+                    typename t_csa::size_type l_res4_b = l_res3_b;
+                    typename t_csa::size_type r_res4_b = r_res3_b;
+
+                    typename t_csa::size_type l_res4_f = l_res3_f;
+                    typename t_csa::size_type r_res4_f = r_res3_f;
+
+                    if (j < i - 1)
+                    {
+                        result = bidirectional_search_backward(csa, r_csa, l_res3_f, r_res3_f, l_res3_b, r_res3_b, j + 1, i, l_res4_f, r_res4_f, l_res4_b, r_res4_b);
+
+                        if (!result)
+                            continue;
+                    }
+
+                    // assume that we replace the character at "i"
+                    for (int ci2 = 0; ci2 < sigma.length(); ci2++)
+                    {
+                        // replace with each possibble letter in "sigma"
+                        typename t_csa::size_type l_res5_b = l_res4_b;
+                        typename t_csa::size_type r_res5_b = r_res4_b;
+
+                        typename t_csa::size_type l_res5_f = l_res4_f;
+                        typename t_csa::size_type r_res5_f = r_res4_f;
+
+                        char c2 = sigma.at(ci2);
+                        if (c2 == *j)
+                            continue; // we do not need to check with the letter in use
+                        // get the range for matches with "c"
+                        result = bidirectional_search(csa, l_res4_f, r_res4_f, l_res4_b, r_res4_b, c2, l_res5_f, r_res5_f, l_res5_b, r_res5_b);
+
+                        if (!result)
+                            continue;
+                        if (j > begin)
+                        {
+                            result = bidirectional_search_backward(csa, r_csa, l_res5_f, r_res5_f, l_res5_b, r_res5_b, begin, j, l_res5_f, r_res5_f, l_res5_b, r_res5_b);
+                        }
+                        total += result;
+                    }
+                }
             }
         }
     }
@@ -392,7 +424,7 @@ typename t_csa::size_type count2(
     l_res_b = 0;
     r_res_b = r_csa.size() - 1;
     result = 1;
-    if (t2 != end)
+    if (t2 < end-1)
     {
         result = bidirectional_search_backward(csa, r_csa, l_res_f, r_res_f, l_res_b, r_res_b, begin, t2 + 1, l_res_f, r_res_f, l_res_b, r_res_b);
     }
@@ -486,10 +518,7 @@ typename t_csa::size_type count2(
     l_res_b = 0;
     r_res_b = r_csa.size() - 1;
     result = 1;
-    if (t1 != end)
-    {
-        result = bidirectional_search_forward(csa, r_csa, l_res_f, r_res_f, l_res_b, r_res_b, begin, t1 + 1, l_res_f, r_res_f, l_res_b, r_res_b);
-    }
+    result = bidirectional_search_forward(csa, r_csa, l_res_f, r_res_f, l_res_b, r_res_b, begin, t1 + 1, l_res_f, r_res_f, l_res_b, r_res_b);
 
     if (result)
     {
@@ -535,10 +564,9 @@ typename t_csa::size_type count2(
                 typename t_csa::size_type r_res_f4 = r_res_f3;
 
                 if(i < t2){
-                    result = bidirectional_search_forward(csa, r_csa, l_res_f3, r_res_f3, l_res_b3, r_res_b3, i, t2 + 1, l_res_f4, r_res_f4, l_res_b4, r_res_b4);
+                    result = bidirectional_search_forward(csa, r_csa, l_res_f3, r_res_f3, l_res_b3, r_res_b3, i + 1, t2 + 1, l_res_f4, r_res_f4, l_res_b4, r_res_b4);
                 }
                 if(!result) continue;
-
                 for (string::iterator j = t2 + 1; j < end; j++)
                 {
                     typename t_csa::size_type l_res_b5 = l_res_b4;
@@ -573,10 +601,15 @@ typename t_csa::size_type count2(
 
                         if (!result)
                             continue;
-                        if(j + 1 < end - 1){
+
+
+                        if(j < end - 1){
                             result = bidirectional_search_forward(csa, r_csa, l_res_f6, r_res_f6, l_res_b6, r_res_b6, j + 1, end, l_res_f6, r_res_f6, l_res_b6, r_res_b6);
                         }
+
+
                         total += result;
+
                     }
                 }
             }
@@ -589,10 +622,7 @@ typename t_csa::size_type count2(
     l_res_b = 0;
     r_res_b = r_csa.size() - 1;
     result = 1;
-    if (t1 != end)
-    {
-        result = bidirectional_search_forward(csa, r_csa, l_res_f, r_res_f, l_res_b, r_res_b, t1 + 1, t2 + 1, l_res_f, r_res_f, l_res_b, r_res_b);
-    }
+    result = bidirectional_search_forward(csa, r_csa, l_res_f, r_res_f, l_res_b, r_res_b, t1 + 1, t2 + 1, l_res_f, r_res_f, l_res_b, r_res_b);
 
 
     if (result)
@@ -677,12 +707,13 @@ typename t_csa::size_type count2(
                         if (!result)
                             continue;
 
-                        if(j + 1 < end - 1){
+                        if(j < end - 1){
                             result = bidirectional_search_forward(csa, r_csa, l_res_f6, r_res_f6, l_res_b6, r_res_b6, j + 1, end, l_res_f6, r_res_f6, l_res_b6, r_res_b6);
                         }
 
 
                         total += result;
+
                     }
                 }
             }
@@ -700,74 +731,427 @@ t_rac locate2(
     csa_tag,
     typename t_csa::size_type occs)
 {
+    typename t_csa::index_category tag;
+
     t_rac occ(occs);
     typename t_csa::size_type pos = 0;
 
+    typename t_csa::size_type result = 1;
+
     string sigma = "0123";
+    size_t s1 = (end - begin) / 3;
 
-    string::iterator middle = begin;
-    int mod = (end - begin) % 2;
-    advance(middle, ((end - begin) / 2) + mod);
+    size_t s2 = (end - begin) - s1;
 
-    // error is in first half:
+    string::iterator t1 = begin;
+    string::iterator t2 = begin;
 
-    typename t_csa::size_type total = 0;
+    if (s1 > 0)
+        advance(t1, s1 - 1);
+    if (s2 > 0)
+        advance(t2, s2 - 1);
 
-    typename t_csa::size_type result;
+    // Case A: mismatches in the first two parts
 
-    for (string::iterator i = end - 1; i >= begin + 1; i--)
+    typename t_csa::size_type l_res_f = 0;
+    typename t_csa::size_type r_res_f = csa.size() - 1;
+    typename t_csa::size_type l_res_b = 0;
+    typename t_csa::size_type r_res_b = r_csa.size() - 1;
+
+    if (t2 < end - 1)
     {
-
-        typename t_csa::size_type l_res = 0;
-        typename t_csa::size_type r_res = csa.size() - 1;
-        if (i != end - 1)
-            result = backward_search(csa, 0, csa.size() - 1, i + 1, end, l_res, r_res);
-
-        for (int ci = 0; ci < sigma.length(); ci++)
+        result = bidirectional_search_backward(csa, r_csa, l_res_f, r_res_f, l_res_b, r_res_b, t2 + 1, end, l_res_f, r_res_f, l_res_b, r_res_b);
+    }
+    if (result)
+    {
+        for (string::iterator i = t2; i > begin; i--)
         {
-            // replace with each possibble letter in "sigma"
-            typename t_csa::size_type l_res2 = l_res;
-            typename t_csa::size_type r_res2 = r_res;
-            char c = sigma.at(ci);
-            if (c == *i)
-                continue;                                                   // we do not need to check with the letter in use
-            result = backward_search(csa, l_res, r_res, c, l_res2, r_res2); // get the range for matches with "c"
-            if (!result)
-                continue;
-
-            if (!result)
-                continue;
-            for (string::iterator j = i - 1; j >= begin; j--)
+            // the missmatch is at "i"
+            typename t_csa::size_type l_res2_f = l_res_f;
+            typename t_csa::size_type r_res2_f = r_res_f;
+            typename t_csa::size_type l_res2_b = l_res_b;
+            typename t_csa::size_type r_res2_b = r_res_b;
+            if (i < t2)
             {
-                typename t_csa::size_type l_res3 = l_res2;
-                typename t_csa::size_type r_res3 = r_res2;
-                if (i != j + 1)
-                {                                                                            // only continue if found
-                    result = backward_search(csa, l_res2, r_res2, j + 1, i, l_res3, r_res3); // look for an exact match to the replaced character
+                result = bidirectional_search_backward(csa, r_csa, l_res_f, r_res_f, l_res_b, r_res_b, i + 1, t2 + 1, l_res2_f, r_res2_f, l_res2_b, r_res2_b);
+                if (!result)
+                    continue;
+            }
+
+            // assume that we replace the character at "i"
+            for (int ci = 0; ci < sigma.length(); ci++)
+            {
+                // replace with each possibble letter in "sigma"
+                typename t_csa::size_type l_res3_f = l_res2_f;
+                typename t_csa::size_type r_res3_f = r_res2_f;
+                typename t_csa::size_type l_res3_b = l_res2_b;
+                typename t_csa::size_type r_res3_b = r_res2_b;
+
+                char c = sigma.at(ci);
+                if (c == *i)
+                    continue; // we do not need to check with the letter in use
+                // get the range for matches with "c"
+                result = bidirectional_search(csa, l_res2_f, r_res2_f, l_res2_b, r_res2_b, c, l_res3_f, r_res3_f, l_res3_b, r_res3_b);
+
+                if (!result)
+                    continue;
+                // result = count1(csa, r_csa, begin, i, l_res3_f, r_res3_f, l_res3_b, r_res3_b, tag);
+                for (string::iterator j = i - 1; j >= begin; j--)
+                {
+                    typename t_csa::size_type l_res4_b = l_res3_b;
+                    typename t_csa::size_type r_res4_b = r_res3_b;
+
+                    typename t_csa::size_type l_res4_f = l_res3_f;
+                    typename t_csa::size_type r_res4_f = r_res3_f;
+
+                    if (j < i - 1)
+                    {
+                        result = bidirectional_search_backward(csa, r_csa, l_res3_f, r_res3_f, l_res3_b, r_res3_b, j + 1, i, l_res4_f, r_res4_f, l_res4_b, r_res4_b);
+
+                        if (!result)
+                            continue;
+                    }
+
+                    // assume that we replace the character at "i"
+                    for (int ci2 = 0; ci2 < sigma.length(); ci2++)
+                    {
+                        // replace with each possibble letter in "sigma"
+                        typename t_csa::size_type l_res5_b = l_res4_b;
+                        typename t_csa::size_type r_res5_b = r_res4_b;
+
+                        typename t_csa::size_type l_res5_f = l_res4_f;
+                        typename t_csa::size_type r_res5_f = r_res4_f;
+
+                        char c2 = sigma.at(ci2);
+                        if (c2 == *j)
+                            continue; // we do not need to check with the letter in use
+                        // get the range for matches with "c"
+                        result = bidirectional_search(csa, l_res4_f, r_res4_f, l_res4_b, r_res4_b, c2, l_res5_f, r_res5_f, l_res5_b, r_res5_b);
+
+                        if (!result)
+                            continue;
+                        if (j > begin)
+                        {
+                            result = bidirectional_search_backward(csa, r_csa, l_res5_f, r_res5_f, l_res5_b, r_res5_b, begin, j, l_res5_f, r_res5_f, l_res5_b, r_res5_b);
+                        }
+
+                        for (typename t_csa::size_type pos2 = 0; pos2 < result; ++pos2)
+                        {
+                            occ[pos++] = csa[l_res5_f + pos2];
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Case B: mismatches in the last part
+
+    l_res_f = 0;
+    r_res_f = csa.size() - 1;
+    l_res_b = 0;
+    r_res_b = r_csa.size() - 1;
+    result = 1;
+    if (t2 < end - 1)
+    {
+        result = bidirectional_search_backward(csa, r_csa, l_res_f, r_res_f, l_res_b, r_res_b, begin, t2 + 1, l_res_f, r_res_f, l_res_b, r_res_b);
+    }
+
+    if (result)
+    {
+        for (string::iterator i = t2 + 1; i < end - 1; i++)
+        {
+            typename t_csa::size_type l_res_b2 = l_res_b;
+            typename t_csa::size_type r_res_b2 = r_res_b;
+
+            typename t_csa::size_type l_res_f2 = l_res_f;
+            typename t_csa::size_type r_res_f2 = r_res_f;
+
+            if (i > t2 + 1)
+            {
+                result = bidirectional_search_forward(csa, r_csa, l_res_f, r_res_f, l_res_b, r_res_b, t2 + 1, i, l_res_f2, r_res_f2, l_res_b2, r_res_b2);
+
+                if (!result)
+                    continue;
+            }
+
+            // assume that we replace the character at "i"
+            for (int ci = 0; ci < sigma.length(); ci++)
+            {
+                // replace with each possibble letter in "sigma"
+                typename t_csa::size_type l_res_b3 = l_res_b2;
+                typename t_csa::size_type r_res_b3 = r_res_b2;
+
+                typename t_csa::size_type l_res_f3 = l_res_f2;
+                typename t_csa::size_type r_res_f3 = r_res_f2;
+
+                char c = sigma.at(ci);
+                if (c == *i)
+                    continue; // we do not need to check with the letter in use
+                // get the range for matches with "c"
+                result = bidirectional_search(r_csa, l_res_b2, r_res_b2, l_res_f2, r_res_f2, c, l_res_b3, r_res_b3, l_res_f3, r_res_f3);
+
+                if (!result)
+                    continue;
+
+                for (string::iterator j = i + 1; j < end; j++)
+                {
+                    typename t_csa::size_type l_res_b4 = l_res_b3;
+                    typename t_csa::size_type r_res_b4 = r_res_b3;
+
+                    typename t_csa::size_type l_res_f4 = l_res_f3;
+                    typename t_csa::size_type r_res_f4 = r_res_f3;
+
+                    if (j > i + 1)
+                    {
+                        result = bidirectional_search_forward(csa, r_csa, l_res_f3, r_res_f3, l_res_b3, r_res_b3, i + 1, j, l_res_f4, r_res_f4, l_res_b4, r_res_b4);
+
+                        if (!result)
+                            continue;
+                    }
+
+                    // assume that we replace the character at "i"
+                    for (int ci2 = 0; ci2 < sigma.length(); ci2++)
+                    {
+                        // replace with each possibble letter in "sigma"
+                        typename t_csa::size_type l_res_b5 = l_res_b4;
+                        typename t_csa::size_type r_res_b5 = r_res_b4;
+
+                        typename t_csa::size_type l_res_f5 = l_res_f4;
+                        typename t_csa::size_type r_res_f5 = r_res_f4;
+
+                        char c2 = sigma.at(ci2);
+                        if (c2 == *j)
+                            continue; // we do not need to check with the letter in use
+                        // get the range for matches with "c"
+                        result = bidirectional_search(r_csa, l_res_b4, r_res_b4, l_res_f4, r_res_f4, c2, l_res_b5, r_res_b5, l_res_f5, r_res_f5);
+
+                        if (!result)
+                            continue;
+
+                        if (j < end - 1)
+                        {
+                            result = bidirectional_search_forward(csa, r_csa, l_res_f5, r_res_f5, l_res_b5, r_res_b5, j + 1, end, l_res_f5, r_res_f5, l_res_b5, r_res_b5);
+                        }
+
+                        for (typename t_csa::size_type pos2 = 0; pos2 < result; ++pos2)
+                        {
+                            occ[pos++] = csa[l_res_f5 + pos2];
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Case C: mismatches in the second and last parts
+    l_res_f = 0;
+    r_res_f = csa.size() - 1;
+    l_res_b = 0;
+    r_res_b = r_csa.size() - 1;
+    result = 1;
+    result = bidirectional_search_forward(csa, r_csa, l_res_f, r_res_f, l_res_b, r_res_b, begin, t1 + 1, l_res_f, r_res_f, l_res_b, r_res_b);
+
+    if (result)
+    {
+        for (string::iterator i = t1 + 1; i <= t2; i++)
+        {
+            typename t_csa::size_type l_res_b2 = l_res_b;
+            typename t_csa::size_type r_res_b2 = r_res_b;
+
+            typename t_csa::size_type l_res_f2 = l_res_f;
+            typename t_csa::size_type r_res_f2 = r_res_f;
+
+            if (i > t1 + 1)
+            {
+                result = bidirectional_search_forward(csa, r_csa, l_res_f, r_res_f, l_res_b, r_res_b, t1 + 1, i, l_res_f2, r_res_f2, l_res_b2, r_res_b2);
+
+                if (!result)
+                    continue;
+            }
+
+            // assume that we replace the character at "i"
+            for (int ci = 0; ci < sigma.length(); ci++)
+            {
+                // replace with each possibble letter in "sigma"
+                typename t_csa::size_type l_res_b3 = l_res_b2;
+                typename t_csa::size_type r_res_b3 = r_res_b2;
+
+                typename t_csa::size_type l_res_f3 = l_res_f2;
+                typename t_csa::size_type r_res_f3 = r_res_f2;
+
+                char c = sigma.at(ci);
+                if (c == *i)
+                    continue; // we do not need to check with the letter in use
+                // get the range for matches with "c"
+                result = bidirectional_search(r_csa, l_res_b2, r_res_b2, l_res_f2, r_res_f2, c, l_res_b3, r_res_b3, l_res_f3, r_res_f3);
+
+                if (!result)
+                    continue;
+
+                typename t_csa::size_type l_res_b4 = l_res_b3;
+                typename t_csa::size_type r_res_b4 = r_res_b3;
+
+                typename t_csa::size_type l_res_f4 = l_res_f3;
+                typename t_csa::size_type r_res_f4 = r_res_f3;
+
+                if (i < t2)
+                {
+                    result = bidirectional_search_forward(csa, r_csa, l_res_f3, r_res_f3, l_res_b3, r_res_b3, i + 1, t2 + 1, l_res_f4, r_res_f4, l_res_b4, r_res_b4);
+                }
+                if (!result)
+                    continue;
+                for (string::iterator j = t2 + 1; j < end; j++)
+                {
+                    typename t_csa::size_type l_res_b5 = l_res_b4;
+                    typename t_csa::size_type r_res_b5 = r_res_b4;
+
+                    typename t_csa::size_type l_res_f5 = l_res_f4;
+                    typename t_csa::size_type r_res_f5 = r_res_f4;
+
+                    if (j > t2 + 1)
+                    {
+                        result = bidirectional_search_forward(csa, r_csa, l_res_f4, r_res_f4, l_res_b4, r_res_b4, t2 + 1, j, l_res_f5, r_res_f5, l_res_b5, r_res_b5);
+
+                        if (!result)
+                            continue;
+                    }
+
+                    // assume that we replace the character at "i"
+                    for (int ci2 = 0; ci2 < sigma.length(); ci2++)
+                    {
+                        // replace with each possibble letter in "sigma"
+                        typename t_csa::size_type l_res_b6 = l_res_b5;
+                        typename t_csa::size_type r_res_b6 = r_res_b5;
+
+                        typename t_csa::size_type l_res_f6 = l_res_f5;
+                        typename t_csa::size_type r_res_f6 = r_res_f5;
+
+                        char c2 = sigma.at(ci2);
+                        if (c2 == *j)
+                            continue; // we do not need to check with the letter in use
+                        // get the range for matches with "c"
+                        result = bidirectional_search(r_csa, l_res_b5, r_res_b5, l_res_f5, r_res_f5, c2, l_res_b6, r_res_b6, l_res_f6, r_res_f6);
+
+                        if (!result)
+                            continue;
+
+                        if (j < end - 1)
+                        {
+                            result = bidirectional_search_forward(csa, r_csa, l_res_f6, r_res_f6, l_res_b6, r_res_b6, j + 1, end, l_res_f6, r_res_f6, l_res_b6, r_res_b6);
+                        }
+
+                        for (typename t_csa::size_type pos2 = 0; pos2 < result; ++pos2)
+                        {
+                            occ[pos++] = csa[l_res_f6 + pos2];
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Case D: mismatches in the first and last parts
+    l_res_f = 0;
+    r_res_f = csa.size() - 1;
+    l_res_b = 0;
+    r_res_b = r_csa.size() - 1;
+    result = 1;
+    result = bidirectional_search_forward(csa, r_csa, l_res_f, r_res_f, l_res_b, r_res_b, t1 + 1, t2 + 1, l_res_f, r_res_f, l_res_b, r_res_b);
+
+    if (result)
+    {
+        for (string::iterator i = t1; i >= begin; i--)
+        {
+            typename t_csa::size_type l_res_b2 = l_res_b;
+            typename t_csa::size_type r_res_b2 = r_res_b;
+
+            typename t_csa::size_type l_res_f2 = l_res_f;
+            typename t_csa::size_type r_res_f2 = r_res_f;
+
+            if (i < t1)
+            {
+                result = bidirectional_search_backward(csa, r_csa, l_res_f, r_res_f, l_res_b, r_res_b, i + 1, t1 + 1, l_res_f2, r_res_f2, l_res_b2, r_res_b2);
+
+                if (!result)
+                    continue;
+            }
+
+            // assume that we replace the character at "i"
+            for (int ci = 0; ci < sigma.length(); ci++)
+            {
+                // replace with each possibble letter in "sigma"
+                typename t_csa::size_type l_res_b3 = l_res_b2;
+                typename t_csa::size_type r_res_b3 = r_res_b2;
+
+                typename t_csa::size_type l_res_f3 = l_res_f2;
+                typename t_csa::size_type r_res_f3 = r_res_f2;
+
+                char c = sigma.at(ci);
+                if (c == *i)
+                    continue; // we do not need to check with the letter in use
+                // get the range for matches with "c"
+                result = bidirectional_search(csa, l_res_f2, r_res_f2, l_res_b2, r_res_b2, c, l_res_f3, r_res_f3, l_res_b3, r_res_b3);
+
+                if (!result)
+                    continue;
+                typename t_csa::size_type l_res_b4 = l_res_b3;
+                typename t_csa::size_type r_res_b4 = r_res_b3;
+
+                typename t_csa::size_type l_res_f4 = l_res_f3;
+                typename t_csa::size_type r_res_f4 = r_res_f3;
+
+                if (i > begin)
+                {
+                    result = bidirectional_search_backward(csa, r_csa, l_res_f3, r_res_f3, l_res_b3, r_res_b3, begin, i, l_res_f4, r_res_f4, l_res_b4, r_res_b4);
                 }
                 if (!result)
                     continue;
 
-                for (int cj = 0; cj < sigma.length(); cj++)
+                for (string::iterator j = t2 + 1; j < end; j++)
                 {
-                    // replace with each possibble letter in "sigma"
-                    typename t_csa::size_type l_res4 = l_res3;
-                    typename t_csa::size_type r_res4 = r_res3;
-                    char c = sigma.at(cj);
-                    if (c == *j)
-                        continue;                                                     // we do not need to check with the letter in use
-                    result = backward_search(csa, l_res3, r_res3, c, l_res4, r_res4); // get the range for matches with "c"
-                    if (!result)
-                        continue;
-                    if (j != begin)
-                    {                                                                            // only continue if found
-                        result = backward_search(csa, l_res4, r_res4, begin, j, l_res4, r_res4); // look for an exact match to the replaced character
-                    }
-                    total += result;
+                    typename t_csa::size_type l_res_b5 = l_res_b4;
+                    typename t_csa::size_type r_res_b5 = r_res_b4;
 
-                    for (typename t_csa::size_type pos2 = 0; pos2 < result; ++pos2)
+                    typename t_csa::size_type l_res_f5 = l_res_f4;
+                    typename t_csa::size_type r_res_f5 = r_res_f4;
+
+                    if (j > t2 + 1)
                     {
-                        occ[pos++] = csa[l_res4 + pos2];
+                        result = bidirectional_search_forward(csa, r_csa, l_res_f4, r_res_f4, l_res_b4, r_res_b4, t2 + 1, j, l_res_f5, r_res_f5, l_res_b5, r_res_b5);
+
+                        if (!result)
+                            continue;
+                    }
+
+                    // assume that we replace the character at "i"
+                    for (int ci2 = 0; ci2 < sigma.length(); ci2++)
+                    {
+                        // replace with each possibble letter in "sigma"
+                        typename t_csa::size_type l_res_b6 = l_res_b5;
+                        typename t_csa::size_type r_res_b6 = r_res_b5;
+
+                        typename t_csa::size_type l_res_f6 = l_res_f5;
+                        typename t_csa::size_type r_res_f6 = r_res_f5;
+
+                        char c2 = sigma.at(ci2);
+                        if (c2 == *j)
+                            continue; // we do not need to check with the letter in use
+                        // get the range for matches with "c"
+                        result = bidirectional_search(r_csa, l_res_b5, r_res_b5, l_res_f5, r_res_f5, c2, l_res_b6, r_res_b6, l_res_f6, r_res_f6);
+
+                        if (!result)
+                            continue;
+
+                        if (j < end - 1)
+                        {
+                            result = bidirectional_search_forward(csa, r_csa, l_res_f6, r_res_f6, l_res_b6, r_res_b6, j + 1, end, l_res_f6, r_res_f6, l_res_b6, r_res_b6);
+                        }
+
+                        for (typename t_csa::size_type pos2 = 0; pos2 < result; ++pos2)
+                        {
+                            occ[pos++] = csa[l_res_f6 + pos2];
+                        }
                     }
                 }
             }
